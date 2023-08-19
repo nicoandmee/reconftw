@@ -45,7 +45,7 @@ def edit(request):
 
 
     if 'UserPicture' in request.FILES:
-        path = "static/imgUsers/img"+str(request.user.id)+".png"
+        path = f"static/imgUsers/img{str(request.user.id)}.png"
 
         if os.path.exists(path):
             os.remove(path)
@@ -58,16 +58,16 @@ def edit(request):
 
     if 'RemoveImg' in post:
         if post['RemoveImg'] == 'on':
-            imagePath = "static/imgUsers/img" + str(dbUser.id) + ".png"
+            imagePath = f"static/imgUsers/img{str(dbUser.id)}.png"
 
             if os.path.exists(imagePath):
                 os.remove(imagePath)
 
-            
-        
+
+
 
     dbUser.save()
-    
+
 
     return post['username'], response 
 

@@ -13,7 +13,7 @@ def monitor(domain):
     '''function to monitor scans statuses'''
     stop = False
 
-    while stop != True:
+    while not stop:
         scans= Project.objects.filter(domain=domain)
         if scans.count() >= 1:
             allStatus = []
@@ -183,14 +183,14 @@ def subdomains_dns_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
+    del path[::2]
 
     file_path = f"{path[-1]}/{project_obj[0].domain}/subdomains/subdomains_dnsregs.json"
 
     if Path(file_path).is_file():
         with open(file_path) as f:
             subs = f.readlines()
-        
+
             for index, s in enumerate(subs):
                 print(f"[+] saving {index} of {len(subs)}")
                 j = json.loads(s.rstrip())
@@ -217,23 +217,24 @@ def s3buckets_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
+    del path[::2]
 
     file_path = f"{path[-1]}/{project_obj[0].domain}/subdomains/s3buckets.txt"
 
     if Path(file_path).is_file():
         with open(file_path) as f:
             s3 = f.readlines()
-        
+
         for s in s3:
             if '|' in s:
                 j = s.rstrip().split('|')
-                s3buckets_save.create(url=j[0], 
-                                        bucket_exists=(True if 'bucket_exists' in j[1] else False), 
-                                        auth_users=j[2].split(',')[0].split(':')[1].lstrip(), 
-                                        all_users=j[2].split(',')[1].split(':')[1].lstrip(), 
-                                        project_id=project_id
-                                        )
+                s3buckets_save.create(
+                    url=j[0],
+                    bucket_exists='bucket_exists' in j[1],
+                    auth_users=j[2].split(',')[0].split(':')[1].lstrip(),
+                    all_users=j[2].split(',')[1].split(':')[1].lstrip(),
+                    project_id=project_id,
+                )
     print("[+] s3buckets: finished saving!! [+]")
 
 
@@ -244,7 +245,7 @@ def webfullinfo_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
+    del path[::2]
 
     file_path = f"{path[-1]}/{project_obj[0].domain}/webs/web_full_info.txt"
 
@@ -257,9 +258,9 @@ def webfullinfo_f2db(project_id):
         with open(file_path, 'r+') as f:
             content = f.read()
             f.seek(0)
-            f.write('['+content)
+            f.write(f'[{content}')
             c2 = f.read()
-            f.write(c2+']')
+            f.write(f'{c2}]')
 
         f = open(file_path).read()
         wfi = json.loads(f)
@@ -287,7 +288,7 @@ def webfullinfo_uncommon_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
+    del path[::2]
 
     file_path = f"{path[-1]}/{project_obj[0].domain}/webs/web_full_info_uncommon.txt"
     filep = Path(file_path)
@@ -299,9 +300,9 @@ def webfullinfo_uncommon_f2db(project_id):
         with open(file_path, 'r+') as f:
             content = f.read()
             f.seek(0)
-            f.write('['+content)
+            f.write(f'[{content}')
             c2 = f.read()
-            f.write(c2+']')
+            f.write(f'{c2}]')
 
         f = open(file_path).read()
         wfi = json.loads(f)
@@ -322,7 +323,7 @@ def cloudasset_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
+    del path[::2]
 
     file_path = f"{path[-1]}/{project_obj[0].domain}/subdomains/cloud_assets.txt"
 
@@ -331,32 +332,11 @@ def cloudasset_f2db(project_id):
             ca = f.readlines()
 
         for i in ca:
-            if 'Protected' in i:
-                protected_s3 = i.split(': ')[-1].strip()
-            else:
-                protected_s3 = 'N/A'
-
-            if 'App Found' in i:
-                appfound = i.split(': ')[-1].strip()
-            else:
-                appfound = 'N/A'
-            
-            if 'Storage Account' in i:
-                storage_acc = i.split(': ')[-1].strip()
-            else:
-                storage_acc = 'N/A'
-
-            if 'Azure' in i:
-                azure = i.split(': ')[-1].strip()
-            else:
-                azure = 'N/A'
-
-            if 'Google' in i:
-                google = i.split(': ')[-1].strip()
-            else:
-                google = 'N/A'
-
-
+            protected_s3 = i.split(': ')[-1].strip() if 'Protected' in i else 'N/A'
+            appfound = i.split(': ')[-1].strip() if 'App Found' in i else 'N/A'
+            storage_acc = i.split(': ')[-1].strip() if 'Storage Account' in i else 'N/A'
+            azure = i.split(': ')[-1].strip() if 'Azure' in i else 'N/A'
+            google = i.split(': ')[-1].strip() if 'Google' in i else 'N/A'
         cloudasset_save.create(protected_s3bucket=protected_s3, appfound=appfound, storage_account=storage_acc, azure=azure, google=google, project_id=project_id)
     
 
@@ -367,14 +347,12 @@ def domaininfoip_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
+    del path[::2]
 
     file_path = f"{path[-1]}/{project_obj[0].domain}/osint/domain_info_ip.txt"
 
     if Path(file_path).is_file():
-        with open(file_path) as f:
-            dip = f.read()
-
+        dip = Path(file_path).read_text()
         domaininfoip_save.create(domain_info_ip=dip, project_id=project_id)
 
 
@@ -385,10 +363,10 @@ def portscanpassive_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
+    del path[::2]
 
     file_path = f"{path[-1]}/{project_obj[0].domain}/hosts/portscan_passive.txt"
-    
+
     if Path(file_path).is_file():
         with open(file_path) as f:
             passive = f.readlines()
@@ -410,14 +388,14 @@ def portscanpassive_f2db(project_id):
 
             elif 'Tags' in i:
                 dc['tags'] = i.strip().split(':')[1].strip()
-            
+
             elif 'CPEs' in i:
                 dc['cpes'] = (', '+i.strip().split('CPEs: ')[1]).split(', cpe:/a:')[1::]
 
             elif search(r'^\n', i):
                 d.append(dc)
                 dc = {}
-            
+
         for j in d:
             portscanpassive_save.create(ip=j.get('ip', 'N/A'), 
                                         host=j.get('host', 'N/A'), 
@@ -434,10 +412,10 @@ def portscanactive_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
+    del path[::2]
 
     file_path = f"{path[-1]}/{project_obj[0].domain}/hosts/portscan_active.gnmap"
-    
+
     if Path(file_path).is_file():
         with open(file_path) as f:
             psa = f.readlines()
@@ -446,10 +424,13 @@ def portscanactive_f2db(project_id):
                 addr = i.strip().split(': ')[1].split(' ')[0]
                 status = i.strip().split(': ')[2]
                 hostname = i.split(' (')[1].split(')')[0]
-                openports = []
-                for op in psa[psa.index(i)+1].split('\t')[1].split(': ')[1].split(', '):
-                    openports.append(op.strip('/').split('//'))
-
+                openports = [
+                    op.strip('/').split('//')
+                    for op in psa[psa.index(i) + 1]
+                    .split('\t')[1]
+                    .split(': ')[1]
+                    .split(', ')
+                ]
                 portscanactive_save.create(ip=addr, hostname=hostname, status=status, 
                                             openports=openports, project_id=project_id)
         
@@ -461,14 +442,12 @@ def dorks_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
-   
+    del path[::2]
+
     file_path = f"{path[-1]}/{project_obj[0].domain}/osint/dorks.txt"
 
     if Path(file_path).is_file():
-        with open(file_path) as f:
-            dorks = f.read()
-
+        dorks = Path(file_path).read_text()
         dorks_save.create(dorks=dorks, project_id=project_id)
     
 
@@ -479,14 +458,12 @@ def gitdorks_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
-    
+    del path[::2]
+
     file_path = f"{path[-1]}/{project_obj[0].domain}/osint/gitdorks.txt"
 
     if Path(file_path).is_file():
-        with open(file_path) as f:
-            gitdorks = f.read()
-
+        gitdorks = Path(file_path).read_text()
         gitdorks_save.create(git_dorks=gitdorks, project_id=project_id)
 
 
@@ -497,8 +474,8 @@ def fuzzingfull_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
-    
+    del path[::2]
+
     file_path = f"{path[-1]}/{project_obj[0].domain}/fuzzing/fuzzing_full.txt"
 
     if Path(file_path).is_file():
@@ -508,12 +485,11 @@ def fuzzingfull_f2db(project_id):
             fuzz_list = []
 
             for i in fuzzinfull[:-1:]:
-                row = []
-                row.append(i.split(' ')[0])
+                row = [i.split(' ')[0]]
                 row.append(i.split(' ')[1])
                 row.append(i.split(' ')[2].strip())
                 fuzz_list.append(row)
-            
+
             fuzzingfull_save.create(fuzzing_full=fuzz_list, project_id=project_id)
 
 
@@ -524,14 +500,12 @@ def subdomains_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
+    del path[::2]
 
     file_path = f"{path[-1]}/{project_obj[0].domain}/subdomains/subdomains.txt"
 
     if Path(file_path).is_file():
-        with open(file_path) as f:
-            subdomains = f.read()
-
+        subdomains = Path(file_path).read_text()
         subdomains_save.create(subdomains=subdomains, project_id=project_id)
 
 
@@ -542,14 +516,12 @@ def domaininfoname_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
+    del path[::2]
 
     file_path = f"{path[-1]}/{project_obj[0].domain}/osint/domain_info_name.txt"
-    
-    if Path(file_path).is_file():
-        with open(file_path) as f:
-            din = f.read()
 
+    if Path(file_path).is_file():
+        din = Path(file_path).read_text()
         domaininfo_name_save.create(domain_info_name=din, project_id=project_id)
 
 
@@ -560,14 +532,12 @@ def domaininfogeneral_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
-    
+    del path[::2]
+
     file_path = f"{path[-1]}/{project_obj[0].domain}/osint/domain_info_general.txt"
 
     if Path(file_path).is_file():
-        with open(file_path) as f:
-            dig = f.read()
-
+        dig = Path(file_path).read_text()
         domaininfo_general_save.create(domain_info_general=dig, project_id=project_id)
 
 
@@ -578,14 +548,12 @@ def domaininfoemail_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
+    del path[::2]
 
     file_path = f"{path[-1]}/{project_obj[0].domain}/osint/domain_info_email.txt"
-    
-    if Path(file_path).is_file():
-        with open(file_path) as f:
-            die = f.read()
 
+    if Path(file_path).is_file():
+        die = Path(file_path).read_text()
         domaininfo_email_save.create(domain_info_email=die, project_id=project_id)
 
 
@@ -596,14 +564,12 @@ def emails_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
+    del path[::2]
 
     file_path = f"{path[-1]}/{project_obj[0].domain}/osint/emails.txt"
-    
-    if Path(file_path).is_file():
-        with open(file_path) as f:
-            emails = f.read()
 
+    if Path(file_path).is_file():
+        emails = Path(file_path).read_text()
         emails_save.create(emails=emails, project_id=project_id)
 
 
@@ -614,14 +580,12 @@ def softwareinfo_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
+    del path[::2]
 
     file_path = f"{path[-1]}/{project_obj[0].domain}/osint/software.txt"
-    
-    if Path(file_path).is_file():
-        with open(file_path) as f:
-            soft = f.read()
 
+    if Path(file_path).is_file():
+        soft = Path(file_path).read_text()
         softwareinfo_save.create(software_info=soft, project_id=project_id)
 
 
@@ -632,14 +596,12 @@ def authorsinfo_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
+    del path[::2]
 
     file_path = f"{path[-1]}/{project_obj[0].domain}/osint/authors.txt"
-    
-    if Path(file_path).is_file():
-        with open(file_path) as f:
-            authors = f.read()
 
+    if Path(file_path).is_file():
+        authors = Path(file_path).read_text()
         authorsinfo_save.create(authors_info=authors, project_id=project_id)
 
 
@@ -651,14 +613,12 @@ def metadataresults_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
-    
+    del path[::2]
+
     file_path = f"{path[-1]}/{project_obj[0].domain}/osint/metadata_result.txt"
 
     if Path(file_path).is_file():
-        with open(file_path) as f:
-            metadata = f.read()
-
+        metadata = Path(file_path).read_text()
         metadataresults_save.create(metadata_results=metadata, project_id=project_id)
 
 
@@ -669,14 +629,12 @@ def zonetransfer_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
+    del path[::2]
 
     file_path = f"{path[-1]}/{project_obj[0].domain}/subdomains/zonetransfer.txt"
-    
-    if Path(file_path).is_file():
-        with open(file_path) as f:
-            zt = f.read()
 
+    if Path(file_path).is_file():
+        zt = Path(file_path).read_text()
         zonetransfer_save.create(zonetransfer=zt, project_id=project_id)
 
 
@@ -687,14 +645,12 @@ def favicontest_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
-    
+    del path[::2]
+
     file_path = f"{path[-1]}/{project_obj[0].domain}/hosts/favicontest.txt"
 
     if Path(file_path).is_file():
-        with open(file_path) as f:
-            favicontest = f.read()
-
+        favicontest = Path(file_path).read_text()
         favicontest_save.create(favicontest=favicontest, project_id=project_id)
 
 
@@ -705,14 +661,14 @@ def subtakeover_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
+    del path[::2]
 
     file_path = f"{path[-1]}/{project_obj[0].domain}/webs/takeover.txt"
-    
+
     if Path(file_path).is_file():
         with open(file_path) as f:
             subtakeover = f.readlines()
-        
+
         for s in subtakeover:
             type_takeover = s.split('] ')[1].strip('[')
             subdomain = s.split('] ')[-1]
@@ -725,8 +681,8 @@ def screenshots_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
-    
+    del path[::2]
+
     ss_path = f"{path[-1]}/{project_obj[0].domain}/screenshots"
 
     if Path(ss_path).is_dir() and len(listdir(ss_path)) > 0:
@@ -753,14 +709,12 @@ def webprobes_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
+    del path[::2]
 
     file_path = f"{path[-1]}/{project_obj[0].domain}/webs/webs.txt"
 
     if Path(file_path).is_file():
-        with open(file_path) as f:
-            webs = f.read()
-
+        webs = Path(file_path).read_text()
         webprobes_save.create(webprobes=webs, project_id=project_id)
 
 
@@ -771,14 +725,12 @@ def webwafs_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
+    del path[::2]
 
     file_path = f"{path[-1]}/{project_obj[0].domain}/webs/web_wafs.txt"
-    
-    if Path(file_path).is_file():
-        with open(file_path) as f:
-            webwafs = f.read()
 
+    if Path(file_path).is_file():
+        webwafs = Path(file_path).read_text()
         webwafs_save.create(webwafs=webwafs, project_id=project_id)
 
 
@@ -789,8 +741,8 @@ def nucleioutputs_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
-    
+    del path[::2]
+
     nuclei_path = f"{path[-1]}/{project_obj[0].domain}/nuclei_output"
 
     if Path(nuclei_path).is_dir() and len(listdir(nuclei_path)) > 0:
@@ -807,11 +759,10 @@ def nucleioutputs_f2db(project_id):
                 with open (f"{nuclei_path}/{s}.txt") as f:
                     raw_list = f.readlines()
 
-                    for i in raw_list:
-                        sev_list.append(sub(r'\[', '', i.strip()).split(']'))
+                    sev_list.extend(sub(r'\[', '', i.strip()).split(']') for i in raw_list)
             else:
                 sev_list.append('N/A')
-            
+
             j[f'{s}'] = sev_list
 
         nucleioutputs_save.create(info=j.get('info', 'N/A'), low=j.get('low', 'N/A'), 
@@ -826,42 +777,42 @@ def urlgf_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
-    
+    del path[::2]
+
     gf_path = f"{path[-1]}/{project_obj[0].domain}/gf"
 
     if Path(gf_path).is_dir() and len(listdir(gf_path)) > 0:
 
         ld = listdir(gf_path)
-    
+
         if 'xss.txt' in ld:
             with open(f"{gf_path}/xss.txt") as f:
                 xss = f.readlines()
                 f.close()
         else:
             xss = 'N/A'
-        
+
         if 'ssti.txt' in ld:
             with open(f"{gf_path}/ssti.txt") as f:
                 ssti = f.readlines()
                 f.close()
         else:
             ssti = 'N/A'
-        
+
         if 'ssrf.txt' in ld:
             with open(f"{gf_path}/ssrf.txt") as f:
                 ssrf = f.readlines()
                 f.close()
         else:
             ssrf = 'N/A'
-        
+
         if 'sqli.txt' in ld:
             with open(f"{gf_path}/sqli.txt") as f:
                 sqli = f.readlines()
                 f.close()
         else:
             sqli = 'N/A'
-        
+
         if 'redirect.txt' in ld:
             with open(f"{gf_path}/redirect.txt") as f:
                 redirect = f.readlines()
@@ -898,7 +849,7 @@ def urlgf_f2db(project_id):
             lfi = 'N/A'
     else:
         xss = ssti = ssrf = sqli = redirect = rce = potential = endpoints = lfi = 'N/A'
-    
+
     urlgf_save.create(xss=xss, ssti=ssti, ssrf=ssrf, sqli=sqli, 
                             redirect=redirect, rce=rce, potential=potential, endpoints=endpoints, 
                             lfi=lfi, project_id=project_id)
@@ -911,8 +862,8 @@ def vulns_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
-    
+    del path[::2]
+
     vulns_path = f"{path[-1]}/{project_obj[0].domain}/vulns"
 
     if Path(vulns_path).is_dir() and len(listdir(vulns_path)) > 0:
@@ -925,7 +876,7 @@ def vulns_f2db(project_id):
                 f.close()
         else:
             brokenlinks = 'N/A'        
-    
+
         if 'xss.txt' in ld:
             with open(f"{vulns_path}/xss.txt") as f:
                 xss = f.read()
@@ -934,11 +885,10 @@ def vulns_f2db(project_id):
             xss = 'N/A'
 
         if 'cors.txt' in ld:
-            with open(f"{vulns_path}/cors.txt") as f:
-                cors = f.read()
+            cors = Path(f"{vulns_path}/cors.txt").read_text()
         else:
             cors = 'N/A'
-        
+
         if 'redirect.txt' in ld:
             with open(f"{vulns_path}/redirect.txt") as f:
                 redirect = f.read()
@@ -987,7 +937,7 @@ def vulns_f2db(project_id):
                 f.close()
         else:
             ssti = 'N/A'
-        
+
         if 'testssl.txt' in ld:
             with open(f"{vulns_path}/testssl.txt") as f:
                 testssl = f.read()
@@ -1016,19 +966,19 @@ def vulns_f2db(project_id):
 
                 url = ''
 
-                for line in f.readlines():
+                for line in f:
                     if "[+] url" in line.lower():
                         url = line.split(":", 1)[-1].replace("\n", "").replace(" ", "")
                         urls[url] ={}
 
-                    
+
                     if "[+] method" in line.lower():
                         urls['method'] = line.split(":", 1)[-1].replace("\n", "").replace(" ", "")
 
                     if "[+] endpoint" in line.lower():
                         urls['endpoint'] = line.split(":", 1)[-1].replace("\n", "").replace(" ", "")
 
-                        
+
                     if "[+] cookies" in line.lower():
                         urls['cookies'] = line.split(":", 1)[-1].replace("\n", "").replace(" ", "")
 
@@ -1039,7 +989,7 @@ def vulns_f2db(project_id):
                             urls[url][var] = line.split(":", 1)[-1].replace(" ", "", 1).replace("\n", "")
 
 
-                smuggling = str(json.dumps(urls))
+                smuggling = json.dumps(urls)
 
                 f.close()
         else:
@@ -1067,27 +1017,21 @@ def webs_uncommon_ports_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
+    del path[::2]
 
     file_path = f"{path[-1]}/{project_obj[0].domain}/webs/webs_uncommon_ports.txt"
-    
+
     if Path(file_path).is_file():
         with open(file_path) as f:
             wup = f.readlines()
-        
-        w = []
-        for i in wup[:-1:]:
-            w.append(sub(r'https?:\/\/', '', i.strip()))
-        
+
+        w = [sub(r'https?:\/\/', '', i.strip()) for i in wup[:-1:]]
         w.sort()
         keyf = lambda text: text.split(":")[0]
         sorted_list = [list(items) for gr, items in groupby(sorted(w), key=keyf)]
 
         for s in sorted_list:
-            ports = []
-            for sn in s:
-                ports.append(sn.split(':')[1])
-            
+            ports = [sn.split(':')[1] for sn in s]
             host = s[0].split(':')[0]
             webs_unc_p_save.create(host=host, ports=ports, project_id=project_id)
 
@@ -1099,42 +1043,42 @@ def webdicts_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
-    
+    del path[::2]
+
     webdicts_path = f"{path[-1]}/{project_obj[0].domain}/webs"
 
     if Path(webdicts_path).is_dir() and len(listdir(webdicts_path)) > 0:
 
         ld = listdir(webdicts_path)
-    
+
         if 'dict_params.txt' in ld:
             with open(f"{webdicts_path}/dict_params.txt") as f:
                 dict_params = [x[:-1] for x in f.readlines()]
                 f.close()
         else:
             dict_params = ['N/A']
-        
+
         if 'dict_values.txt' in ld:
             with open(f"{webdicts_path}/dict_values.txt") as f:
                 dict_values = [x[:-1] for x in f.readlines()]
                 f.close()
         else:
             dict_values = ['N/A']
-        
+
         if 'dict_words.txt' in ld:
             with open(f"{webdicts_path}/dict_words.txt") as f:
                 dict_words = [x[:-1] for x in f.readlines()]
                 f.close()
         else:
             dict_words = ['N/A']
-        
+
         if 'all_paths.txt' in ld:
             with open(f"{webdicts_path}/all_paths.txt") as f:
                 all_paths = [x[:-1] for x in f.readlines()]
                 f.close()
         else:
             all_paths = ['N/A']
-        
+
         if 'password_dict.txt' in ld:
             with open(f"{webdicts_path}/password_dict.txt") as f:
                 password_dict = f.read()
@@ -1154,14 +1098,12 @@ def urlextract_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
+    del path[::2]
 
     file_path = f"{path[-1]}/{project_obj[0].domain}/webs/url_extract.txt"
-    
-    if Path(file_path).is_file():
-        with open(file_path) as f:
-            urle = f.read()
 
+    if Path(file_path).is_file():
+        urle = Path(file_path).read_text()
         urlextract_save.create(url_extract=urle, project_id=project_id)
 
 
@@ -1172,14 +1114,12 @@ def urlextract_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
+    del path[::2]
 
     file_path = f"{path[-1]}/{project_obj[0].domain}/webs/url_extract.txt"
-    
-    if Path(file_path).is_file():
-        with open(file_path) as f:
-            urle = f.read()
 
+    if Path(file_path).is_file():
+        urle = Path(file_path).read_text()
         urlextract_save.create(url_extract=urle, project_id=project_id)
 
 
@@ -1190,14 +1130,12 @@ def cdnproviders_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
+    del path[::2]
 
     file_path = f"{path[-1]}/{project_obj[0].domain}/hosts/cdn_providers.txt"
-    
-    if Path(file_path).is_file():
-        with open(file_path) as f:
-            cdnp = f.read()
 
+    if Path(file_path).is_file():
+        cdnp = Path(file_path).read_text()
         cdnprov_save.create(cdn_providers=cdnp, project_id=project_id)
 
 
@@ -1208,8 +1146,8 @@ def jschecks_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
-    
+    del path[::2]
+
     jschecks_path = f"{path[-1]}/{project_obj[0].domain}/js"
 
     if Path(jschecks_path).is_dir() and len(listdir(jschecks_path)) > 0:
@@ -1225,17 +1163,14 @@ def jschecks_f2db(project_id):
             if f'{s}.txt' in ld:
                 with open (f"{jschecks_path}/{s}.txt") as f:
                     raw_list = f.readlines()
-                    
+
                     if 'secrets' not in s:
-                        for i in raw_list:
-                            js_list.append(i.strip())
+                        js_list.extend(i.strip() for i in raw_list)
                     else:
-                        for i in raw_list:
-                            js_list.append(sub(r'\[', '', i.strip()).split('] '))
-                        
+                        js_list.extend(sub(r'\[', '', i.strip()).split('] ') for i in raw_list)
             else:
                 js_list.append('N/A')
-            
+
             j[f'{s}'] = js_list
 
 
@@ -1250,31 +1185,31 @@ def ipsinfos_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
-    
-    ipsinfos_path = f"{path[-1]}/{project_obj[0].domain}/osint"
+    del path[::2]
 
-    c1 = compile(r'ip_.*._relations\.txt')
-    c2 = compile(r'ip_.*.whois\.txt')
-    c3 = compile(r'ip_.*._location\.txt')
+    ipsinfos_path = f"{path[-1]}/{project_obj[0].domain}/osint"
 
     if Path(ipsinfos_path).is_dir() and len(listdir(ipsinfos_path)) > 0:
 
         ld = listdir(ipsinfos_path)
-    
+
+        c1 = compile(r'ip_.*._relations\.txt')
         if any(c1.search(i) for i in ld):
             with open(f"{ipsinfos_path}/ip_domain_relations.txt") as f:
                 ip_domain_relations = f.read()
                 f.close()
         else:
             ip_domain_relations = 'N/A'
-        
+
+        c2 = compile(r'ip_.*.whois\.txt')
         if any(c2.search(i) for i in ld):
             with open(f"{ipsinfos_path}/ip_domain_whois.txt") as f:
                 ip_domain_whois = f.read()
                 f.close()
         else:
             ip_domain_whois = 'N/A' 
+
+        c3 = compile(r'ip_.*._location\.txt')
 
         if any(c3.search(i) for i in ld):
             with open(f"{ipsinfos_path}/ip_domain_location.txt") as f:
@@ -1294,35 +1229,35 @@ def osintusersinfo_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
-    
+    del path[::2]
+
     osintusers_path = f"{path[-1]}/{project_obj[0].domain}/js"
 
     if Path(osintusers_path).is_dir() and len(listdir(osintusers_path)) > 0:
 
         ld = listdir(osintusers_path)
-    
+
         if 'emails.txt' in ld:
             with open(f"{osintusers_path}/emails.txt") as f:
                 emails = f.read()
                 f.close()
         else:
             emails = 'N/A'
-        
+
         if 'users.txt' in ld:
             with open(f"{osintusers_path}/users.txt") as f:
                 users = f.read()
                 f.close()
         else:
             users = 'N/A'
-        
+
         if 'h8mail.txt' in ld:
             with open(f"{osintusers_path}/h8mail.txt") as f:
                 h8mail = f.read()
                 f.close()
         else:
             h8mail = 'N/A'
-        
+
         if 'passwords.txt' in ld:
             with open(f"{osintusers_path}/passwords.txt") as f:
                 passwords = f.read()
@@ -1357,14 +1292,12 @@ def githubsecrets_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
+    del path[::2]
 
     file_path = f"{path[-1]}/{project_obj[0].domain}/osint/github_company_secrets.json"
-    
-    if Path(file_path).is_file():
-        with open(file_path) as f:
-            ghs = f.read()
 
+    if Path(file_path).is_file():
+        ghs = Path(file_path).read_text()
         githubsecrets_save.create(github_secrets=ghs, project_id=project_id)
 
 
@@ -1375,19 +1308,17 @@ def cms_f2db(project_id):
     project_obj = Project.objects.filter(pk=project_id)
 
     path = project_obj[0].command.split("'")
-    del path[0::2]
+    del path[::2]
 
     cms_path = f"{path[-1]}/{project_obj[0].domain}/cms/"
-    
+
     if Path(cms_path).is_dir() and len(listdir(cms_path)) > 0:
         cms_files = listdir(cms_path)
 
         for s in cms_files:
-            with open(s) as f:
-                cms = f.read()
-
+            cms = Path(s).read_text()
             cms_save.create(subdomain=s, cms=cms, project_id=project_id)
-        
+
     else:
         cms_save.create(subdomain='N/A', cms='N/A', project_id=project_id)
 
@@ -1398,8 +1329,6 @@ def subdomains_context(project_id):
     subs_context = []
 
     for s in SubdomainsDNS.objects.filter(project_id=project_id).order_by('host'):
-        j = {}
-
         subd = s.host
         ipaddr = s.a_record
         ports = []
@@ -1411,14 +1340,15 @@ def subdomains_context(project_id):
             subtakeover = SubTakeover.objects.filter(project_id=project_id, subdomain=subd).values('type_takeover').get()['type_takeover']
         else:
             subtakeover = 'NO'
-        
-        j['subdomain'] = subd
-        j['ip_address'] = ipaddr
-        j['ports'] = ports
-        j['subtakeover'] = subtakeover
 
+        j = {
+            'subdomain': subd,
+            'ip_address': ipaddr,
+            'ports': ports,
+            'subtakeover': subtakeover,
+        }
         subs_context.append(j)
-    
+
     return subs_context
 
 
@@ -1426,10 +1356,7 @@ def subdomains_context(project_id):
 def screenshots_context(number):
     ss = []
     for i in ScreenShots.objects.filter(project_id=number):
-        s = []  
-        s.append(i.hostname)
-        s.append(i.port)
-        s.append(b64encode(i.screenshot).decode('utf-8'))
+        s = [i.hostname, i.port, b64encode(i.screenshot).decode('utf-8')]
         if WebFullInfo.objects.filter(project_id=number, url=i.hostname, port=i.port).exists():
             s.append(literal_eval(WebFullInfo.objects.filter(project_id=number, url=i.hostname, port=i.port).values('technologies').get()['technologies'])[0])
         elif WebFullInfoUncommon.objects.filter(project_id=number, url=i.hostname, port=i.port).exists():
@@ -1437,7 +1364,7 @@ def screenshots_context(number):
         else:
             s.append('N/A')
         ss.append(s)
-    
+
     return ss
 
 

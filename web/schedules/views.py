@@ -47,21 +47,16 @@ def schedule_scan(request):
         post = request.POST
 
         days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-        daylist = ""
-
-        for item in days:
-            if item in post:
-                daylist += item+", "
-
+        daylist = "".join(f"{item}, " for item in days if item in post)
         daylist = daylist[:-2]
 
-        
+
         id = post['id']
         hours = post["hours"] if post["hours"] != "" else "00"
         minutes = post["minutes"] if post["minutes"] != "" else "00"
         nome = Project.objects.get(id=id).domain
         command = Project.objects.get(id=id).command.split("'")
-        del command[0::2]
+        del command[::2]
 
 
         if len(daylist) != 0:
@@ -72,10 +67,10 @@ def schedule_scan(request):
             ) 
 
             task = PeriodicTask.objects.create(
-                name=id+"-"+str(datetime.now()),
+                name=f"{id}-{str(datetime.now())}",
                 task='new_scan_single_domain',
                 crontab=schedule,
-                args=json.dumps(command)
+                args=json.dumps(command),
             )
 
             task.enabled = True

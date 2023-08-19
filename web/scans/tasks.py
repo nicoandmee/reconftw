@@ -13,7 +13,7 @@ import favicon, requests, subprocess
 def new_scan_single_domain(*command):
     """task that creates scan project"""
     command = str(command).split("'")
-    del command[0::2]
+    del command[::2]
     single_domain = command[2]
 
     # COUNTING PROJECTS OF SAME DOMAIN TO CALCULATE THE NEXT NUMBER
@@ -24,29 +24,29 @@ def new_scan_single_domain(*command):
 
     path = BASE_DIR.parent / f"Recon/{single_domain}_v{next}"
 
-    command.append('-o') 
+    command.append('-o')
     command.append(str(path))
-    
+
 
     mode = str(command[3])
 
-    if mode == '-r': # RECON
-        scan_mode = "[ -r ] - Recon"
-        
-    elif mode == '-s': # SUBDOMAINS
-        scan_mode = "[ -s ] - Subdomains"
+    if mode == '-a':
+        scan_mode = "[ -a ] - All"
 
-    elif mode == '-p': # PASSIVE
+    elif mode == '-n':
+        scan_mode = "[ -n ] - Osint"
+
+    elif mode == '-p':
         scan_mode = "[ -p ] - Passive"
 
-    elif mode == '-w': # WEB
+    elif mode == '-r':
+        scan_mode = "[ -r ] - Recon"
+
+    elif mode == '-s':
+        scan_mode = "[ -s ] - Subdomains"
+
+    elif mode == '-w':
         scan_mode = "[ -w ] - Web"
-    
-    elif mode == '-n': # OSINT
-        scan_mode = "[ -n ] - Osint"
-    
-    elif mode == '-a': # ALL
-        scan_mode = "[ -a ] - All"
 
     # GENERAL OPTIONS
     g_opt = str(command[-3])
@@ -54,12 +54,12 @@ def new_scan_single_domain(*command):
             scan_mode += ' / Deep Scan'
     if '-v' in command:
             scan_mode += ' / Axiom'
-    
-        
+
+
 
     # ADDING DOMAIN
     puredomain = str(single_domain).split('.')[0]
-    
+
     # SAVING PROJECT IN DB
     Project.objects.create(number=next,
                              domain=single_domain,
@@ -70,24 +70,24 @@ def new_scan_single_domain(*command):
 
 
     # GETTING THE ICON
-    if not Project.objects.filter(icon = "static/img/target_icon/{}.ico".format(puredomain)).exists():
-         try:
-             target_icon = Project.objects.get(domain=single_domain, number=next)
-             name_icon = "{}.ico".format(puredomain)
-             icon_url = favicon.get('http://{}'.format(single_domain))
-            
-             if icon_url:
-                 icon = icon_url[0]
-                 print("ICON URL: "+str(icon))
- 
-                 response = requests.get(icon.url, stream=True, timeout=10)
+    if not Project.objects.filter(
+        icon=f"static/img/target_icon/{puredomain}.ico"
+    ).exists():
+        try:
+            target_icon = Project.objects.get(domain=single_domain, number=next)
+            name_icon = f"{puredomain}.ico"
+            if icon_url := favicon.get(f'http://{single_domain}'):
+                icon = icon_url[0]
+                print(f"ICON URL: {str(icon)}")
 
-                 if response.status_code  == 200:
-                         target_icon.icon.save(name_icon, ContentFile(response.content), save=True)
+                response = requests.get(icon.url, stream=True, timeout=10)
 
-         except Exception as err:
-            print(err)
-    
+                if response.status_code  == 200:
+                        target_icon.icon.save(name_icon, ContentFile(response.content), save=True)
+
+        except Exception as err:
+           print(err)
+
     # STARTING RUN_SCAN TASK
     r = run_scan.apply_async(args=[command, next], queue="run_scans")
 

@@ -22,29 +22,30 @@ def ReconConfig(name, key=None, get=None):
 
         lines = open(file, "r").readlines()
 
-        subs = {}
-
         if key != None:
-            for line in lines:
-                if name in line and key != "":
-                    subs[line] = name+'="'+key+'"\n'
-            
-                    break
-                elif name in line and key == "":
-                    subs[line] = '#'+name+'="XXXXXXXXXXXXX"\n'
-                    break
+            subs = {}
 
-            for sub in subs:
-                replace = Path(file)
-                replace.write_text(replace.read_text().replace(sub, subs[sub], 1))
-
-        elif get == True:
-            result = ""
             for line in lines:
                 if name in line:
-                    result = line.split("=")[1].replace(" ", "")
-                    break
+                    if key != "":
+                        subs[line] = f'{name}="{key}' + '"\n'
 
+                    else:
+                        subs[line] = f'#{name}' + '="XXXXXXXXXXXXX"\n'
+                    break
+            for sub, value in subs.items():
+                replace = Path(file)
+                replace.write_text(replace.read_text().replace(sub, value, 1))
+
+        elif get == True:
+            result = next(
+                (
+                    line.split("=")[1].replace(" ", "")
+                    for line in lines
+                    if name in line
+                ),
+                "",
+            )
             if "XXXXXXXX" in result or "XXX-XXX-XXX" in result:
                 return ""
             else:
@@ -53,7 +54,7 @@ def ReconConfig(name, key=None, get=None):
 
 #https://ddaniboy.github.io/sariel.html
 def amassConfig(name, key=None, get=None):
-    file = str(Path.home())+"/.config/amass/config.ini"
+    file = f"{str(Path.home())}/.config/amass/config.ini"
     name = name.lower()
 
     lines = open(file, "r").readlines()
@@ -73,7 +74,7 @@ def amassConfig(name, key=None, get=None):
 
     for line in lines:
 
-        if "data_sources."+name in line.lower():
+        if f"data_sources.{name}" in line.lower():
             cont = True
 
         if cont == True:
@@ -81,109 +82,95 @@ def amassConfig(name, key=None, get=None):
             sub += line
             if param in line:
                 cont = False
-                
+
                 if len(line.split("=")) > 1:
                     apikey = line.split("=")[1].replace("\n", "")
                 else:
                     apikey = ""
                 break
-    
-    
+
+
 
     if get == True:
         return apikey.replace(" ", "")
-    else:
-        apikey = apikey.replace(" ", "")
-        key = key.replace(" ", "")
-        if apikey != key and key != "":
-            final = ""
-            for con in conf:
-                if con != "":
-                    if con[0] == "#":
-                        con = con.replace("#", "", 1)
-                    while con[0] == " ":
-                        con = con.replace(" ", "", 1)
+    apikey = apikey.replace(" ", "")
+    key = key.replace(" ", "")
+    if apikey != key != "":
+        final = ""
+        for con in conf:
+            if con != "":
+                if con[0] == "#":
+                    con = con.replace("#", "", 1)
+                while con[0] == " ":
+                    con = con.replace(" ", "", 1)
 
-                if param in con.lower():
-                    con = param + " = "+key+"\n"
-
-                
-                final += con
-
-            replace = Path(file)
-            replace.write_text(replace.read_text().replace(sub, final, 1))
+            if param in con.lower():
+                con = f"{param} = {key}" + "\n"
 
 
+            final += con
 
-        elif apikey != "" and key == "":
-            final = ""
-            for con in conf:
-                if con != "":
-                    con = "#"+con
-                if param in con.lower():
-                    con = "#"+param+" =\n"
+        replace = Path(file)
+        replace.write_text(replace.read_text().replace(sub, final, 1))
 
-                
-                final += con
 
-            
-            replace = Path(file)
-            replace.write_text(replace.read_text().replace(sub, final, 1))
+
+    elif apikey != "" and key == "":
+        final = ""
+        for con in conf:
+            if con != "":
+                con = f"#{con}"
+            if param in con.lower():
+                con = f"#{param}" + " =\n"
+
+
+            final += con
+
+
+        replace = Path(file)
+        replace.write_text(replace.read_text().replace(sub, final, 1))
 
 
 
 
 def GithubConfig(number, key=None, get=None):
-    file = str(Path.home())+"/Tools/.github_tokens"
+    file = f"{str(Path.home())}/Tools/.github_tokens"
     number = int(number)-1
     lines = open(file, "r").readlines()
 
     if len(lines) <= 5:
 
-        lines = open(file, "w")
-        for i in range(0, 6):
-            lines.write("\n")
-        lines.close()
-
-
+        with open(file, "w") as lines:
+            for _ in range(0, 6):
+                lines.write("\n")
     if key != None:
         if key != "":
             lines[number] = key+"\n"
-        elif key == "" and lines[number] != key:
+        elif lines[number] != key:
             lines[number] = "\n"
 
-        gitTokens = open(file, "w")
-        for item in lines:
-            gitTokens.write(item)
-        gitTokens.close()
-
-
+        with open(file, "w") as gitTokens:
+            for item in lines:
+                gitTokens.write(item)
     if get == True:
 
         lines = open(file, "r").readlines()
 
-        result = lines[number]   
-
-        return result
+        return lines[number]
            
 def theHarvesterConfig(name, key=None, get=None):
-    namefile = str(Path.home())+"/Tools/theHarvester/api-keys.yaml"
+    namefile = f"{str(Path.home())}/Tools/theHarvester/api-keys.yaml"
     listOfNames = {"chaos":"projectDiscovery"}
 
     if name.lower() in listOfNames:
         name = listOfNames[name.lower()]
 
-    if name == "censys":
-        var = "secret"
-    else:
-        var = "key"
-
-
+    var = "secret" if name == "censys" else "key"
     with open(namefile) as file:
         if key != None:
             data = yaml.load(file, Loader=yaml.FullLoader)
 
-            if key != data["apikeys"][name][var] and key != "":
+            if key not in [data["apikeys"][name][var], ""]:
                 data["apikeys"][name][var] = key
 
             elif key == "" and data["apikeys"][name][var] != None:
@@ -192,19 +179,16 @@ def theHarvesterConfig(name, key=None, get=None):
 
             with open(namefile, "w") as comp:
                 yaml.dump(data, comp)
-        
+
         elif get == True:
             data = yaml.load(file, Loader=yaml.FullLoader)
 
             result = data["apikeys"][name][var]
 
-            if result == None:
-                return ''
-            else:
-                return result
+            return '' if result is None else result
 
 def h8mailConfig(name, key=None, get=None):
-    file = str(Path.home())+"/Tools/h8mail_config.ini"
+    file = f"{str(Path.home())}/Tools/h8mail_config.ini"
 
     lines = open(file, "r").readlines()
     sub=""
@@ -229,9 +213,9 @@ def h8mailConfig(name, key=None, get=None):
                     replace = Path(file)
                     replace.write_text(replace.read_text().replace(sub, final, 1))
                     break
-                
-            elif name in line and key == "":
-                final = ";"+name+" = "
+
+            elif name in line:
+                final = f";{name} = "
                 sub = line
 
 
@@ -247,7 +231,7 @@ def h8mailConfig(name, key=None, get=None):
                 sub = line
 
                 key = line.split("=")[1].replace(" ", "")
-                
+
                 break
-        
+
         return key
